@@ -1,23 +1,31 @@
 #define RAYGUI_IMPLEMENTATION
-#include "Editor/2D/2DEditor.hpp"
+
+#include "Input/Mouse.hpp"
+#include "MainUI/MainUI.hpp"
+
+void inputLoop(input::MouseHandler &mouseHandler) {
+    mouseHandler.start();
+}
+
+void userInterfaceLoop(MainUI &mainUI, input::MouseHandler &mouseHandler) {
+    mainUI.loop(mouseHandler);
+}
 
 int main()
 {
-    const int screenWidth = 800;
-    const int screenHeight = 600;
-    paint::Editor PaintEditor(screenWidth, screenHeight);
-
-    InitWindow(screenWidth, screenHeight, "Pixel Art Editor");
-    SetTargetFPS(60);
-
-    while (!WindowShouldClose()) {
-        BeginDrawing();
-        ClearBackground(GRAY);
-
-        PaintEditor.update();
-
-        EndDrawing();
+    if (SDL_Init(SDL_INIT_EVENTS) != 0) {
+        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+        return 1;
     }
-    CloseWindow();
-    return 0;
+
+    MainUI mainUI;
+    input::MouseHandler mouseHandler;
+
+    std::thread uiThread(userInterfaceLoop, std::ref(mainUI), std::ref(mouseHandler));
+    std::thread inputThread(inputLoop, std::ref(mouseHandler));
+
+    uiThread.join();
+    inputThread.join();
+
+    SDL_Quit();
 }
